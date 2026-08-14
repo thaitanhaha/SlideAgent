@@ -1,49 +1,29 @@
-from datetime import datetime
-import yaml
 import copy
+from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, Callable
+from typing import Dict, Any, Callable, List
+import yaml
+
 from conclusion_generator import ConclusionGenerator
-from database_manager import DatabaseManager
-from file_utils import ReportTask, load_yaml_file
+from file_utils import ReportTask
 from pptx_parser2 import PptxParser
-from sql_generator import SqlGenerator
+from document_extractor import DocumentDataExtractor
+from document_processor import DocumentProcessor
 from tools_selector import ToolSelector
 from tool_functions import *
 
-
-
 class YamlProcessor:
-    def __init__(self, task: ReportTask, sql_generator: SqlGenerator, database_manager: DatabaseManager, tool_selector: ToolSelector, conclusion_generator: ConclusionGenerator):
+    def __init__(self, task: ReportTask, document_processor: DocumentProcessor, document_extractor: DocumentDataExtractor, tool_selector: ToolSelector, conclusion_generator: ConclusionGenerator):
         self.task = task
-        self.sql_generator = sql_generator
-        self.database_manager = database_manager
+        self.document_processor = document_processor
+        self.document_extractor = document_extractor
         self.tool_selector = tool_selector
         self.conclusion_generator = conclusion_generator
         self.pptx_parser = PptxParser(self.task.pptx_template_path)
 
-    def _generate_output_slide(self, ground_truth_data: Dict[str, Any]) -> Dict[str, Any]:
-        output_slide = copy.deepcopy(ground_truth_data.get('output_slide', {}))
-
-        if 'content_elements' in output_slide and isinstance(output_slide['content_elements'], list):
-            sql_query = self.sql_generator.generate_sql(self.task.query)
-
-            for element in output_slide['content_elements']:
-                element['sql_query'] = sql_query
-        
-        return output_slide
-
     def create_timestamped_folder(self) -> Path:
         base = Path("data")
         stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        path = base / stamp
-        path.mkdir(parents=True, exist_ok=True)
-        return path.resolve()
-
-    def create_timestamped_folder1(self) -> Path:
-
-        base = Path("data")
-        stamp = datetime.now().strftime("%m%d_%H%M%S")
         path = base / stamp
         path.mkdir(parents=True, exist_ok=True)
         return path.resolve()
@@ -60,163 +40,125 @@ class YamlProcessor:
                 if element.get('type') == 'chart' or element.get('type') == 'table':
                     template_slide['elements'][i]['data'] = data_list[num]
                     num+=1
-
-
             return template_slide
 
-    def parse_ppt(self):
+    def parse_ppt_structure(self) -> Dict[str, Any]:
+        """
+        Parses the structural layout of the template slide.
+        """
         try:
-            query_filters = self.sql_generator.generate_datasource_json(self.task.query)
-
-
-            parsed_template_structure = self.load_yaml_data(self.task.ground_truth_yaml_path)
-            # parsed_template_structure = self.pptx_parser._match_caption_and_table(parsed_template_structure)
-            # print("parsed_template_structure:",parsed_template_structure)
-
-
-            slide_filters = self.sql_generator.get_slide_filters_json(parsed_template_structure)
-            slide_filters = self.pptx_parser._match_caption_and_table1(parsed_template_structure,slide_filters)
-
-            update_filters = self.sql_generator.process_update_filters(query_filters, slide_filters)
-
-
-            return query_filters,  slide_filters, update_filters, parsed_template_structure
+            if hasattr(self.task, 'ground_truth_yaml_path') and self.task.ground_truth_yaml_path:
+                return self.load_yaml_data(self.task.ground_truth_yaml_path)
+            return self.pptx_parser.parse_slide_vlm(slide_idx=0)
         except Exception as e:
-            return None, None, None, None
+            print(f"[Error] Parsing PPT structure failed: {e}")
+            return {}
 
-    def parse_ppt_and_requirements_params(self):
-        try:
-            query_filters = self.sql_generator.generate_datasource_json(self.task.query)
-
-            parsed_template_structure = self.pptx_parser.parse_slide_vlm(slide_idx=0)
-
-            slide_filters = self.sql_generator.get_slide_filters_json(parsed_template_structure)
-
-            update_filters = self.sql_generator.process_update_filters(query_filters, slide_filters)
-
-            return query_filters, parsed_template_structure,slide_filters, update_filters
-        except Exception as e:
-            return None, None, None, None
-
-
-    def generate_sql(self, update_filters: List):
+    def extract_document_data_for_targets(
+        self, 
+        template_slides: Dict[str, Any], 
+        target_indices: List[int], 
+        document_text: str
+    ) -> Path:
+        """
+        Reads the document text and extracts data only for the selected target elements.
+        """
         data_path = self.create_timestamped_folder()
-        max_retries = 0
-        attempt = 0
-        while attempt <= max_retries:
-            try:
-                sql_query = self.sql_generator.generate_sql(update_filters)
+        retrieval_path = data_path / "retrieval"
+        retrieval_path.mkdir(parents=True, exist_ok=True)
 
-                self.database_manager.execute_query_save_data(sql_query, data_path)
-                return sql_query, data_path
-            except Exception as e:
-                print(f"{e}")
-                return ['sql_error'], data_path
-
-
-    def get_standard_answer_sql(self, task: ReportTask):
-        with open(task.ground_truth_yaml_path, "r", encoding="utf-8") as f:
-            data = yaml.safe_load(f)
-        elements = data.get('output_slide', {}).get('content_elements', [])
-        sql_list = []
-        for element in elements:
-            sql_list.append(element['sql_query'])
-        sql_query = sql_list
-        print(f"  -> : {sql_query}")
-        data_path = self.create_timestamped_folder()
         try:
-            self.database_manager.execute_query_save_data(sql_query, data_path)
+            instruction = getattr(self.task, 'query', 'Extract and update data')
+
+            # Filter elements to only extract tables/charts identified in target_indices
+            table_specs = []
+            for idx, element in enumerate(template_slides.get('elements', [])):
+                if idx in target_indices and element.get('type') in {'chart', 'table'}:
+                    spec = {
+                        'caption': element.get('caption', f'Target_Element_{idx}'),
+                        'columns': element.get('data', {}).get('columns', ['col1', 'col2'])
+                    }
+                    table_specs.append(spec)
+
+            if not table_specs:
+                print("[Warning] No tables/charts were selected for updating.")
+                return data_path
+
+            # Call DocumentProcessor to save data to the data_path
+            self.document_processor.extract_multiple_tables_from_document(
+                document_text=document_text,
+                table_specs=table_specs,
+                instruction=instruction,
+                data_path=data_path
+            )
+            print(f"[Success] Data extracted from document.")
+            
         except Exception as e:
-            print(f"  -> : {e}")
-        return sql_query, data_path
+            print(f"[Error] During document extraction: {e}")
+            
+        return data_path
 
-    def _count_csv_files(self, dir_path: str | Path) -> int:
-        p = Path(dir_path)
-        return sum(1 for _ in p.glob("*.csv"))
-    def run_with_optional(
-            self,
-            func: Callable[..., Any],
-            data_path: str,
-            project: Any,
-            area_range_size: Any,
-            price_range_size: Any,
-    ) -> Any:
-
-        base_path = Path(data_path)
-        retrieval_path = base_path / "retrieval"
-        processed_path = base_path / "processed"
-        processed_path.mkdir(parents=True, exist_ok=True)
-        input_path = str(retrieval_path / "0.csv")
-        output_path = str(processed_path / "0.xlsx")
-
-        payload = {}
-
-        if project != 'default':
-            payload["project"] = project
-        if area_range_size != 'default':
-            payload["area_range_size"] = area_range_size
-        if price_range_size != 'default':
-            payload["price_range_size"] = price_range_size
-
-        return func(input_path = input_path, output_path = output_path, **payload)
-
-    def generate_tool_call_params(self, query_filters: Dict, update_filters: list, data_path: Path):
-
+    def generate_conclusion(self, template_slides: Dict[str, Any], data_path: Path, document_text: str, target_indices: List[int]) -> Any:
+        """
+        Generates the updated conclusion/summary for the slide based on the newly extracted data.
+        """
         try:
-            update_filters = self.tool_selector.select_function_by_intent(query_filters=query_filters,update_filters=update_filters, data_path=data_path)
-            return update_filters
-        except Exception as e:
-            print(f"  -> : {e}")
-            return update_filters
-
-    def generate_conclusion(self, query_filters: Dict, template_slides: Dict[str, Any], data_path: Path) -> str:
-        try:
-            output_slide = self.conclusion_generator.get_conclusion(query_filters=query_filters, template_slide =template_slides,
-                                                                   data_path=data_path)
+            output_slide = self.conclusion_generator.get_conclusion(
+                query=self.task.query, 
+                template_slide=template_slides,
+                data_path=data_path,
+                document_text=document_text,
+                target_indices=target_indices
+            )
             return output_slide
         except Exception as e:
-            print(f"  -> : {e}")
+            print(f"[Error] Generating conclusion failed: {e}")
             return ''
 
-    def process_and_generate(self, task: ReportTask) -> Dict[str, Any]:
+    def process_and_generate(self, document_path: str = None) -> Dict[str, Any]:
+        """
+        Parse Structure -> Select targets -> Document Data Extraction -> Slide Generation
+        """
+        template_slides = self.parse_ppt_structure()
 
-        return self._process_full_workflow()
+        slide_params = self.document_extractor.process_slide_params(template_slides)
 
-    # 以下是拆分出的子方法
-    def _process_full_workflow(self) -> Dict[str, Any]:
-        query_filters, slide_filters, update_filters, template_slides = self.parse_ppt()
-
-        try:
-            sql_queries, data_path = self.generate_sql(copy.deepcopy(update_filters))
-            for i, query in enumerate(sql_queries):
-                update_filters[i]['sql_query'] = copy.deepcopy(query)
-        except Exception as e:
-            print(f"  -> : {e}")
-            return ' '
-        print("update_filters", update_filters)
-
-        update_filters = self.generate_tool_call_params(
-            copy.deepcopy(query_filters),
-            copy.deepcopy(update_filters),
-            data_path
+        target_indices = self.document_extractor.identify_target_elements(
+            user_instruction=self.task.query,
+            slide_params=slide_params
         )
+
+        document_text = ""
+        if document_path and Path(document_path).exists():
+            document_text = self.document_processor.read_document(document_path)
+
+        data_path = self.extract_document_data_for_targets(
+            template_slides=template_slides,
+            target_indices=target_indices,
+            document_text=document_text 
+        )
+
         output_slide = self.generate_conclusion(
-            copy.deepcopy(query_filters),
-            copy.deepcopy(template_slides),
-            data_path
+            template_slides=copy.deepcopy(template_slides),
+            data_path=data_path,
+            document_text=document_text,
+            target_indices=target_indices
         )
 
         return {
-            'query_filters': query_filters,
-            'slide_filters': slide_filters,
-            'update_filters': update_filters,
+            'instruction': self.task.query,
+            'target_elements': target_indices,
             'template_slide': template_slides,
-            'output_slide': output_slide
+            'output_slide': output_slide,
+            'data_path': str(data_path)
         }
 
     def save_to_file(self, data: Dict[str, Any]):
+        """
+        Saves the processed slide output to a YAML file.
+        """
         output_dir = self.task.ground_truth_yaml_path.parent
-        output_filename = f"{self.task.ground_truth_yaml_path.stem}_generated_120b.yaml"
+        output_filename = f"{self.task.ground_truth_yaml_path.stem}_generated_doc.yaml"
         output_path = output_dir / output_filename
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -231,6 +173,6 @@ class YamlProcessor:
                 indent=2,
                 width=float('inf'),
             )
-        print(f"✅ Successfully generated YAML file: {output_path}\n")
+        print(f"[Success] Generated YAML output file at: {output_path}\n")
 
 
