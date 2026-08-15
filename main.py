@@ -2,7 +2,6 @@ import time
 from tqdm import tqdm
 from document_processor import DocumentProcessor
 from document_extractor import DocumentDataExtractor
-from tools_selector import ToolSelector
 from yaml_processor import YamlProcessor
 from conclusion_generator import ConclusionGenerator
 from file_utils import find_target_csv_files, read_report_tasks_from_csv
@@ -18,7 +17,6 @@ def main():
 
     document_processor = DocumentProcessor()
     document_extractor = DocumentDataExtractor()
-    tool_selector = ToolSelector()
     conclusion_generator = ConclusionGenerator()
 
     for csv_path in csv_files:
@@ -31,8 +29,8 @@ def main():
 
         for task in tqdm(tasks, desc="Processing Tasks", unit="task"):
             task_start_time = time.time()
-            processor = YamlProcessor(task, document_processor, document_extractor, tool_selector, conclusion_generator)
-            generated_data = processor.process_and_generate(task)
+            processor = YamlProcessor(task, document_processor, document_extractor, conclusion_generator)
+            generated_data = processor.process_and_generate()
             processor.save_to_file(generated_data)
             task_end_time = time.time()
             task_elapsed_time = task_end_time - task_start_time

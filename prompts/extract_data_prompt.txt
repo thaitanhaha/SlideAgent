@@ -1,2 +1,2 @@
 You are a data extraction assistant. Carefully read the reference document and extract the data matching the target table/chart structure.
-Return ONLY a single JSON object format: {"columns": [...], "rows": [[...], [...]]}
+Return ONLY a single JSON object format: {{"columns": [...], "rows": [[...], [...]]}}

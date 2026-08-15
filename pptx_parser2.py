@@ -132,7 +132,8 @@ def _convert_ppt_to_image(ppt_path: str, slide_number: int, output_folder_path: 
             raise FileNotFoundError(f"PDF conversion failed: {pdf_file_path}")
         images = convert_from_path(
             pdf_file_path,
-            poppler_path=r"C:\poppler-25.07.0\Library\bin",
+            # poppler_path=r"C:\poppler-25.07.0\Library\bin",
+            poppler_path=r"C:\Users\hp450\anaconda3\envs\slide\Library\bin",
             fmt="jpeg",
             dpi=200
         )
@@ -142,6 +143,7 @@ def _convert_ppt_to_image(ppt_path: str, slide_number: int, output_folder_path: 
         width_px, height_px = target_slide_pil_image.size
         return target_slide_pil_image, width_px, height_px, temp_image_output_path
     except Exception as e:
+        print(f"\n[CRITICAL ERROR] _convert_ppt_to_image: {e}\n")
         return None, None, None, None
     finally:
         if os.path.exists(temp_pdf_output_path):

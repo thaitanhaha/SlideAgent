@@ -15,7 +15,8 @@ def _call_vision_model_v2(base64_image: str) -> List[Dict[str, Any]]:
     try:
         system_prompt = load_prompt_from_file("layout_parsing_prompt.txt")
         completion = client.chat.completions.create(
-            model="qwen25-vl",
+            # model="qwen25-vl",
+            model=config.MODEL_NAME,
             messages=[{
                 "role": "system",
                 "content": [{"type": "text", "text": system_prompt}]
@@ -24,7 +25,7 @@ def _call_vision_model_v2(base64_image: str) -> List[Dict[str, Any]]:
                 "content": [
                     {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}},
                     {"type": "text",
-                     "text": "Please analyze the slide content according to the system prompt, identify titles, summaries, and chart/table captions, and return JSON."}
+                     "text": "Please analyze the slide content according to the system prompt, identify titles, summaries, and chart/table captions, and return ONLY a single JSON object."}
                 ],
             }],
         )
@@ -38,3 +39,6 @@ def _call_vision_model_v2(base64_image: str) -> List[Dict[str, Any]]:
     except Exception as e:
         print(f"Failed to call vision model or parse JSON: {e}")
         return []
+
+
+    

@@ -9,15 +9,12 @@ from file_utils import ReportTask
 from pptx_parser2 import PptxParser
 from document_extractor import DocumentDataExtractor
 from document_processor import DocumentProcessor
-from tools_selector import ToolSelector
-from tool_functions import *
 
 class YamlProcessor:
-    def __init__(self, task: ReportTask, document_processor: DocumentProcessor, document_extractor: DocumentDataExtractor, tool_selector: ToolSelector, conclusion_generator: ConclusionGenerator):
+    def __init__(self, task: ReportTask, document_processor: DocumentProcessor, document_extractor: DocumentDataExtractor, conclusion_generator: ConclusionGenerator):
         self.task = task
         self.document_processor = document_processor
         self.document_extractor = document_extractor
-        self.tool_selector = tool_selector
         self.conclusion_generator = conclusion_generator
         self.pptx_parser = PptxParser(self.task.pptx_template_path)
 
@@ -115,7 +112,7 @@ class YamlProcessor:
             print(f"[Error] Generating conclusion failed: {e}")
             return ''
 
-    def process_and_generate(self, document_path: str = None) -> Dict[str, Any]:
+    def process_and_generate(self) -> Dict[str, Any]:
         """
         Parse Structure -> Select targets -> Document Data Extraction -> Slide Generation
         """
@@ -129,6 +126,7 @@ class YamlProcessor:
         )
 
         document_text = ""
+        document_path = self.task.document_path
         if document_path and Path(document_path).exists():
             document_text = self.document_processor.read_document(document_path)
 
@@ -157,8 +155,11 @@ class YamlProcessor:
         """
         Saves the processed slide output to a YAML file.
         """
-        output_dir = self.task.ground_truth_yaml_path.parent
-        output_filename = f"{self.task.ground_truth_yaml_path.stem}_generated_doc.yaml"
+        # output_dir = self.task.ground_truth_yaml_path.parent
+        # output_filename = f"{self.task.ground_truth_yaml_path.stem}_generated_doc.yaml"
+        # output_path = output_dir / output_filename
+        output_dir = self.task.pptx_template_path.parent
+        output_filename = f"{self.task.pptx_template_path.stem}_generated_doc.yaml"
         output_path = output_dir / output_filename
 
         output_path.parent.mkdir(parents=True, exist_ok=True)

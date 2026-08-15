@@ -10,6 +10,7 @@ class ReportTask(NamedTuple):
     Data structure for storing a single report task read from CSV.
     """
     pptx_template_path: Path
+    document_path: Path
     query: str
     ground_truth_yaml_path: Path
 
@@ -42,12 +43,17 @@ def read_report_tasks_from_csv(csv_path: Path) -> List[ReportTask]:
             for i, row in enumerate(reader, 0):
                 if len(row) < 3:
                     continue
-                pptx_path_str, query, yaml_path_str = row
+                pptx_path_str, document_path_str, query, yaml_path_str = row
                 pptx_path = Path(pptx_path_str).resolve()
+                document_path = Path(document_path_str).resolve()
                 yaml_path = Path(yaml_path_str).resolve()
 
                 if not pptx_path.exists():
                     print(f"Warning: PPTX template path does not exist at row {i}: {pptx_path}, skipped.")
+                    continue
+
+                if not document_path.exists():
+                    print(f"Warning: Document path does not exist at row {i}: {document_path}, skipped.")
                     continue
 
                 if not yaml_path.exists():
@@ -56,8 +62,10 @@ def read_report_tasks_from_csv(csv_path: Path) -> List[ReportTask]:
 
                 tasks.append(ReportTask(
                     pptx_template_path=pptx_path,
+                    document_path=document_path,
                     query=query.strip(),
-                    ground_truth_yaml_path=yaml_path
+                    # ground_truth_yaml_path=yaml_path
+                    ground_truth_yaml_path=None
                 ))
     except Exception as e:
         print(f"Error: Failed to read CSV file {csv_path}: {e}")

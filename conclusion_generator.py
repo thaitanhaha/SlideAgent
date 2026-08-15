@@ -179,7 +179,7 @@ class ConclusionGenerator:
                 original_idx = item.get('_original_idx', -1)
                 role = item.get('role', '')
                 # A. Change text
-                if role in {'slide-title', 'text'} and original_idx in target_indices:
+                if role in {'slide-title', 'body-text', 'text'} and original_idx in target_indices:
                     try:
                         rewrite_chain = self.text_rewrite_prompt_template | self.model
                         response = rewrite_chain.invoke({

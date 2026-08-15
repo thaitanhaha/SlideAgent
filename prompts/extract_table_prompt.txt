@@ -4,10 +4,10 @@ RULES:
 1. Return ONLY a single JSON object.
 2. DO NOT add any explanations, preamble, or markdown formatting outside the JSON.
 3. The JSON format MUST match this structure:
-{
+{{
   "columns": ["Column 1 Name", "Column 2 Name"],
   "data": [
     ["Row 1 Col 1 Value", "Row 1 Col 2 Value"],
     ["Row 2 Col 1 Value", "Row 2 Col 2 Value"]
   ]
-}
+}}
