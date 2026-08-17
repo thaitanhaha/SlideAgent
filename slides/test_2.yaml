@@ -1,9 +1,5 @@
-instruction: Update slide based on the given document
-target_elements:
-- 0
-- 1
 template_slide:
-  slide_size:
+- slide_size:
     width: 33.87
     height: 19.05
   elements:
@@ -27,27 +23,3 @@ template_slide:
       width: 24.85
       height: 11.65
     _original_idx: 1
-output_slide:
-  slide_size:
-    width: 33.87
-    height: 19.05
-  elements:
-  - id: 0
-    type: textBox
-    text: Definition
-    role: slide-title
-    layout:
-      x: 1.79
-      y: 1.26
-      width: 26.12
-      height: 3.89
-  - id: 1
-    type: textBox
-    text: "TESSSTT."
-    role: body-text
-    layout:
-      x: 3.06
-      y: 5.7
-      width: 24.85
-      height: 11.65
-data_path: C:\Users\hp450\Desktop\SlideAgent\data\20260816_020055

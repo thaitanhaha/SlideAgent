@@ -1,0 +1,29 @@
+template_slide:
+- slide_size:
+    width: 33.87
+    height: 19.05
+  elements:
+  - id: 0
+    type: textBox
+    text: Types
+    role: slide-title
+    layout:
+      x: 1.79
+      y: 1.26
+      width: 26.12
+      height: 3.89
+    _original_idx: 0
+  - id: 1
+    type: textBox
+    text: 'Supervised learning: Uses data that already has the correct answers (labels) to teach the system how to predict outcomes for new data.
+
+      Unsupervised learning: Looks at data without any labels to find hidden groups or patterns on its own.
+
+      Reinforcement learning: Learns by trial and error, getting rewards for good moves and penalties for bad ones'
+    role: body-text
+    layout:
+      x: 3.06
+      y: 5.7
+      width: 24.85
+      height: 11.65
+    _original_idx: 1

@@ -14,12 +14,11 @@ class PptxRenderer:
         with open(self.yaml_path, 'r', encoding='utf-8') as f:
             yaml_data = yaml.safe_load(f)
                     
-        output_slide = yaml_data.get('output_slide', {})
+        output_slides = yaml_data.get('output_slides', {})
 
-        if prs.slides and output_slide:
-            print("    -> Updating Slide 1...")
-            slide = prs.slides[0]
-            self._update_slide(slide, output_slide)
+        for idx in range(len(output_slides)):
+            print(f"-> Updating Slide {idx}...")
+            self._update_slide(prs.slides[idx], output_slides[idx])
             
         prs.save(self.output_path)
         print(f"\n[Success] Saved at: {self.output_path}")
@@ -96,9 +95,9 @@ class PptxRenderer:
 
 
 if __name__ == "__main__":
-    TEMPLATE_PPTX = "slides/slide2.pptx" 
-    YAML_GENERATED = "slides/slide2_generated_doc.yaml"
-    OUTPUT_PPTX = "slides/slide2_fix.pptx"
+    TEMPLATE_PPTX = "slides/slide1.pptx" 
+    YAML_GENERATED = "slides/slide1_generated_doc.yaml"
+    OUTPUT_PPTX = "slides/slide1_fix.pptx"
     
     renderer = PptxRenderer(
         template_path=TEMPLATE_PPTX,

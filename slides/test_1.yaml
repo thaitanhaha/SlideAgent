@@ -1,0 +1,25 @@
+template_slide:
+- slide_size:
+    width: 33.87
+    height: 19.05
+  elements:
+  - id: 0
+    type: textBox
+    text: Introduction to Machine Learning
+    role: slide-title
+    layout:
+      x: 3.21
+      y: 4.02
+      width: 24.52
+      height: 9.25
+    _original_idx: 0
+  - id: 1
+    type: textBox
+    text: Machine Learning is a great topic!
+    role: body-text
+    layout:
+      x: 3.21
+      y: 13.27
+      width: 24.52
+      height: 2.39
+    _original_idx: 1

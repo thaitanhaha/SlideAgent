@@ -1,0 +1,157 @@
+instruction: Change the content of the slide from Introduction to Machine Learning to Introduction to Deep Learning
+target_elements:
+- - 0
+  - 1
+- - 0
+  - 1
+- - 0
+  - 1
+template_slides:
+- slide_size:
+    width: 33.87
+    height: 19.05
+  elements:
+  - id: 0
+    type: textBox
+    text: Introduction to Machine Learning
+    role: slide-title
+    layout:
+      x: 3.21
+      y: 4.02
+      width: 24.52
+      height: 9.25
+    _original_idx: 0
+  - id: 1
+    type: textBox
+    text: Machine Learning is a great topic!
+    role: body-text
+    layout:
+      x: 3.21
+      y: 13.27
+      width: 24.52
+      height: 2.39
+    _original_idx: 1
+- slide_size:
+    width: 33.87
+    height: 19.05
+  elements:
+  - id: 0
+    type: textBox
+    text: Definition
+    role: slide-title
+    layout:
+      x: 1.79
+      y: 1.26
+      width: 26.12
+      height: 3.89
+    _original_idx: 0
+  - id: 1
+    type: textBox
+    text: "Machine learning is a part of artificial intelligence. \nIt lets computers learn from data and get better over time without writing exact rules for every task. \nInstead of hard-coding instructions, programmers feed data into a system so it can find patterns and make its own choices or guesses."
+    role: body-text
+    layout:
+      x: 3.06
+      y: 5.7
+      width: 24.85
+      height: 11.65
+    _original_idx: 1
+- slide_size:
+    width: 33.87
+    height: 19.05
+  elements:
+  - id: 0
+    type: textBox
+    text: Types
+    role: slide-title
+    layout:
+      x: 1.79
+      y: 1.26
+      width: 26.12
+      height: 3.89
+    _original_idx: 0
+  - id: 1
+    type: textBox
+    text: 'Supervised learning: Uses data that already has the correct answers (labels) to teach the system how to predict outcomes for new data.
+
+      Unsupervised learning: Looks at data without any labels to find hidden groups or patterns on its own.
+
+      Reinforcement learning: Learns by trial and error, getting rewards for good moves and penalties for bad ones'
+    role: body-text
+    layout:
+      x: 3.06
+      y: 5.7
+      width: 24.85
+      height: 11.65
+    _original_idx: 1
+output_slides:
+- slide_size:
+    width: 33.87
+    height: 19.05
+  elements:
+  - id: 0
+    type: textBox
+    text: 'User Safety: safe'
+    role: slide-title
+    layout:
+      x: 3.21
+      y: 4.02
+      width: 24.52
+      height: 9.25
+  - id: 1
+    type: textBox
+    text: Deep Learning is a great topic!
+    role: body-text
+    layout:
+      x: 3.21
+      y: 13.27
+      width: 24.52
+      height: 2.39
+- slide_size:
+    width: 33.87
+    height: 19.05
+  elements:
+  - id: 0
+    type: textBox
+    text: 'User Safety: safe'
+    role: slide-title
+    layout:
+      x: 1.79
+      y: 1.26
+      width: 26.12
+      height: 3.89
+  - id: 1
+    type: textBox
+    text: 'Deep learning is a branch of artificial intelligence.
+
+      It enables computers to learn from data and improve over time without writing explicit rules for each task.
+
+      Instead of hand-coding, developers feed data into a system that discovers patterns and makes its own decisions or guesses precisely.'
+    role: body-text
+    layout:
+      x: 3.06
+      y: 5.7
+      width: 24.85
+      height: 11.65
+- slide_size:
+    width: 33.87
+    height: 19.05
+  elements:
+  - id: 0
+    type: textBox
+    text: Introduction to Deep Learning
+    role: slide-title
+    layout:
+      x: 1.79
+      y: 1.26
+      width: 26.12
+      height: 3.89
+  - id: 1
+    type: textBox
+    text: "Neural Networks: Models inspired by the structure of the human brain, consisting of interconnected nodes that process and learn from data.  \nDeep Neural Networks: Neural networks with multiple hidden layers that can learn increasingly complex and abstract features.  \nBackpropagation: A learning process that adjusts the network’s weights based on prediction errors, allowing the model to improve over time."
+    role: body-text
+    layout:
+      x: 3.06
+      y: 5.7
+      width: 24.85
+      height: 11.65
+data_path: C:\Users\hp450\Desktop\SlideAgent\data\20260818_044954

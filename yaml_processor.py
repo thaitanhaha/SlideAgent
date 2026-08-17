@@ -1,7 +1,7 @@
 import copy
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, Callable, List
+from typing import Dict, Any, List
 import yaml
 
 from conclusion_generator import ConclusionGenerator
@@ -25,13 +25,14 @@ class YamlProcessor:
         path.mkdir(parents=True, exist_ok=True)
         return path.resolve()
 
-    def load_yaml_data(self, yaml_path: Path):
-        slide = self.pptx_parser.presentation.slides[0]
+    def load_yaml_data(self, yaml_path: Path, slide_idx: int = 0):
+        slide = self.pptx_parser.presentation.slides[slide_idx]
         data_list = self.pptx_parser._extract_pptx_elements1(slide)
 
         with open(yaml_path, 'r', encoding='utf-8') as f:
             data = yaml.safe_load(f)
             template_slide = data.get('template_slide', {})
+            template_slide = template_slide[0]
             num = 0
             for i,element in enumerate(template_slide['elements']):
                 if element.get('type') == 'chart' or element.get('type') == 'table':
@@ -39,29 +40,36 @@ class YamlProcessor:
                     num+=1
             return template_slide
 
-    def parse_ppt_structure(self) -> Dict[str, Any]:
+    def parse_ppt_structure(self, slide_idx: int) -> Dict[str, Any]:
         """
-        Parses the structural layout of the template slide.
+        Parses the structural layout of a specific slide index.
         """
         try:
-            if hasattr(self.task, 'ground_truth_yaml_path') and self.task.ground_truth_yaml_path:
-                return self.load_yaml_data(self.task.ground_truth_yaml_path)
-            return self.pptx_parser.parse_slide_vlm(slide_idx=0)
+            # if hasattr(self.task, 'ground_truth_yaml_path') and self.task.ground_truth_yaml_path:
+            #     return self.load_yaml_data(self.task.ground_truth_yaml_path, slide_idx)
+            # return self.pptx_parser.parse_slide_vlm(slide_idx=slide_idx)
+            #TODO hard code
+            if slide_idx == 0:
+                return self.load_yaml_data("slides/test_1.yaml", 0)
+            if slide_idx == 1:
+                return self.load_yaml_data("slides/test_2.yaml", 1)
+            if slide_idx == 2:
+                return self.load_yaml_data("slides/test_3.yaml", 2)
         except Exception as e:
-            print(f"[Error] Parsing PPT structure failed: {e}")
+            print(f"[Error] Parsing PPT structure failed for slide {slide_idx}: {e}")
             return {}
 
     def extract_document_data_for_targets(
         self, 
         template_slides: Dict[str, Any], 
         target_indices: List[int], 
-        document_text: str
+        document_text: str,
+        slide_data_path: Path
     ) -> Path:
         """
-        Reads the document text and extracts data only for the selected target elements.
+        Reads the document text and extracts data only for the selected target tables/charts.
         """
-        data_path = self.create_timestamped_folder()
-        retrieval_path = data_path / "retrieval"
+        retrieval_path = slide_data_path / "retrieval"
         retrieval_path.mkdir(parents=True, exist_ok=True)
 
         try:
@@ -79,21 +87,21 @@ class YamlProcessor:
 
             if not table_specs:
                 print("[Warning] No tables/charts were selected for updating.")
-                return data_path
+                return slide_data_path
 
             # Call DocumentProcessor to save data to the data_path
             self.document_processor.extract_multiple_tables_from_document(
                 document_text=document_text,
                 table_specs=table_specs,
                 instruction=instruction,
-                data_path=data_path
+                data_path=slide_data_path
             )
             print(f"[Success] Data extracted from document.")
             
         except Exception as e:
             print(f"[Error] During document extraction: {e}")
             
-        return data_path
+        return slide_data_path
 
     def generate_conclusion(self, template_slides: Dict[str, Any], data_path: Path, document_text: str, target_indices: List[int]) -> Any:
         """
@@ -116,44 +124,112 @@ class YamlProcessor:
         """
         Parse Structure -> Select targets -> Document Data Extraction -> Slide Generation
         """
-        template_slides = self.parse_ppt_structure()
-
-        slide_params = self.document_extractor.process_slide_params(template_slides)
-
-        target_indices = self.document_extractor.identify_target_elements(
-            user_instruction=self.task.query,
-            slide_params=slide_params
-        )
-
         document_text = ""
         document_path = self.task.document_path
         if document_path and Path(document_path).exists():
             document_text = self.document_processor.read_document(document_path)
 
-        data_path = self.extract_document_data_for_targets(
-            template_slides=template_slides,
-            target_indices=target_indices,
-            document_text=document_text 
-        )
+        num_slides = len(self.pptx_parser.presentation.slides)
+        print(f"[Info] Found {num_slides} slides to process.")
 
-        output_slide = self.generate_conclusion(
-            template_slides=copy.deepcopy(template_slides),
-            data_path=data_path,
+        base_data_path = self.create_timestamped_folder()
+
+        # =================
+        # GLOBAL SCAN
+        # =================
+        all_template_slides = []
+        global_slide_params = []
+        id_mapping = {}
+        global_counter = 0
+
+        for slide_idx in range(num_slides):
+            template_slide = self.parse_ppt_structure(slide_idx=slide_idx)
+            all_template_slides.append(template_slide)
+            
+            if not template_slide or "error" in template_slide:
+                continue
+
+            slide_params = self.document_extractor.process_slide_params(template_slide)
+            
+            for param in slide_params:
+                param_copy = param.copy()
+                param_copy['global_index'] = global_counter
+                param_copy['slide_index'] = slide_idx
+                global_slide_params.append(param_copy)
+                
+                id_mapping[global_counter] = {
+                    'slide_idx': slide_idx, 
+                    'element_index': param['element_index']
+                }
+                global_counter += 1
+
+        # =================
+        # GLOBAL TARGETING
+        # =================
+        
+        global_target_indices = self.document_extractor.identify_global_target_elements(
+            user_instruction=self.task.query,
             document_text=document_text,
-            target_indices=target_indices
+            global_slide_params=global_slide_params
         )
+        
+        slide_targets_map = {i: [] for i in range(num_slides)}
+        for g_idx in global_target_indices:
+            if g_idx in id_mapping:
+                s_idx = id_mapping[g_idx]['slide_idx']
+                e_idx = id_mapping[g_idx]['element_index']
+                slide_targets_map[s_idx].append(e_idx)
+
+        # =================
+        # LOCAL EXECUTION
+        # =================
+        all_output_slides = []
+        all_target_elements = []
+
+        for slide_idx in range(num_slides):
+            template_slide = all_template_slides[slide_idx]
+            target_indices = slide_targets_map[slide_idx]
+            all_target_elements.append(target_indices)
+
+            if not template_slide or "error" in template_slide:
+                all_output_slides.append(template_slide)
+                continue
+                
+            print(f"-> Updating slide {slide_idx + 1}/{num_slides}")
+
+            if not target_indices:
+                all_output_slides.append(copy.deepcopy(template_slide))
+                continue
+
+            slide_data_path = base_data_path / f"slide_{slide_idx}"
+            slide_data_path.mkdir(parents=True, exist_ok=True)
+
+            self.extract_document_data_for_targets(
+                template_slides=template_slide,
+                target_indices=target_indices,
+                document_text=document_text,
+                slide_data_path=slide_data_path
+            )
+
+            output_slide = self.generate_conclusion(
+                template_slides=copy.deepcopy(template_slide),
+                data_path=slide_data_path,
+                document_text=document_text,
+                target_indices=target_indices
+            )
+            all_output_slides.append(output_slide)
 
         return {
             'instruction': self.task.query,
-            'target_elements': target_indices,
-            'template_slide': template_slides,
-            'output_slide': output_slide,
-            'data_path': str(data_path)
+            'target_elements': all_target_elements,
+            'template_slides': all_template_slides,
+            'output_slides': all_output_slides,
+            'data_path': str(base_data_path)
         }
 
     def save_to_file(self, data: Dict[str, Any]):
         """
-        Saves the processed slide output to a YAML file.
+        Saves the processed multi-slide output to a YAML file.
         """
         # output_dir = self.task.ground_truth_yaml_path.parent
         # output_filename = f"{self.task.ground_truth_yaml_path.stem}_generated_doc.yaml"
@@ -174,6 +250,4 @@ class YamlProcessor:
                 indent=2,
                 width=float('inf'),
             )
-        print(f"[Success] Generated YAML output file at: {output_path}\n")
-
-
+        print(f"\n[Success] Generated multi-slide YAML output file at: {output_path}\n")

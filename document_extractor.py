@@ -7,7 +7,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 
 from config import config
-from file_utils import load_prompt_from_file
+from file_utils import load_prompt_from_file, _clean_and_parse_json
 
 
 class DocumentDataExtractor:
@@ -31,7 +31,7 @@ class DocumentDataExtractor:
         system_prompt = load_prompt_from_file("identify_targets_prompt.txt")
         return ChatPromptTemplate.from_messages([
             ("system", system_prompt),
-            ("human", "List of slide elements:\n{available_elements}\n\nUser request:\n{user_instruction}")
+            ("human", "Available Slide Elements:\n{available_elements}\n\nUser request:\n{user_instruction}\n\nReference Materials:\n{reference_materials}")
         ])
 
     def _create_extract_prompt_template(self) -> ChatPromptTemplate:
@@ -43,19 +43,6 @@ class DocumentDataExtractor:
             ("system", system_prompt),
             ("human", "Reference document:\n{document_text}\n\nUpdate request: {user_instruction}\n\nTarget table/chart structure:\n{slide_params}")
         ])
-
-    def _clean_and_parse_json(self, raw_text: str) -> Any:
-        """
-        Removes <think> tags and markdown blocks to safely parse the JSON output.
-        """
-        cleaned = re.sub(r'<think>.*?</think>', '', raw_text, flags=re.DOTALL).strip()
-        if cleaned.startswith("```json"):
-            cleaned = cleaned[7:]
-        elif cleaned.startswith("```"):
-            cleaned = cleaned[3:]
-        if cleaned.endswith("```"):
-            cleaned = cleaned[:-3]
-        return json.loads(cleaned.strip())
 
     def _nearest_point(self, point, points):
         """
@@ -165,14 +152,14 @@ class DocumentDataExtractor:
         return slide_params
 
 
-    def identify_target_elements(self, user_instruction: str, slide_params: List[Dict[str, Any]]) -> List[int]:
+    def identify_target_elements(self, user_instruction: str, document_text: str, slide_params: List[Dict[str, Any]]) -> List[int]:
         """
         Uses the LLM to select the element indices that need to be changed based on the user instruction.
         """
         available_summary = [
             {
                 "element_index": p.get("element_index"),
-                "caption": p.get("caption"),
+                "text": p.get("caption"),
                 "type": p.get("element_type")
             }
             for p in slide_params
@@ -182,13 +169,46 @@ class DocumentDataExtractor:
         try:
             response = chain.invoke({
                 "available_elements": json.dumps(available_summary, ensure_ascii=False),
-                "user_instruction": user_instruction
+                "user_instruction": user_instruction,
+                "reference_materials": document_text
             })
-            result = self._clean_and_parse_json(response.content)
+            result = _clean_and_parse_json(response.content)
             return result.get("target_indices", [])
         except Exception as e:
             print(f"[Warning] Failed to identify target elements ({e}). Defaulting to update all elements.")
             return [p.get("element_index") for p in slide_params]
 
 
+    def identify_global_target_elements(self, user_instruction: str, document_text: str, global_slide_params: List[Dict[str, Any]]) -> List[int]:
+        """
+        Uses the LLM to select target elements across ALL slides at once.
+        """
+        return [0,1,2,3,4,5]
+        available_summary = [
+            {
+                "element_index": p.get("global_index"), 
+                "slide_index": p.get("slide_index"),
+                "text": p.get("caption"),
+                "type": p.get("element_type")
+            }
+            for p in global_slide_params
+        ]
+        # formatted_elements = "\n".join([
+        #     f"- element_index: {p.get('global_index')} | slide_index: {p.get('slide_index')} | Type: {p.get('element_type')} | Text: {p.get('text')}"
+        #     for p in global_slide_params
+        # ])
+
+        chain = self.target_selector_prompt_template | self.model
+        try:
+            response = chain.invoke({
+                "available_elements": json.dumps(available_summary, ensure_ascii=False),
+                # "available_elements": formatted_elements,
+                "user_instruction": user_instruction,
+                "reference_materials": document_text
+            })
+            result = _clean_and_parse_json(response.content)
+            return result.get("target_indices", [])
+        except Exception as e:
+            print(f"[Warning] Failed to identify global target elements ({e}).")
+            return []
         

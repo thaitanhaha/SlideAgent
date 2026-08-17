@@ -2,6 +2,8 @@ import csv
 import glob
 import os
 import yaml
+import re
+import json
 from pathlib import Path
 from typing import List, Dict, Any, NamedTuple
 
@@ -111,3 +113,15 @@ def load_prompt_from_file(file_name: str) -> str:
     raise FileNotFoundError(f"Prompt file not found: {file_name}")
 
 
+def _clean_and_parse_json(raw_text: str) -> Any:
+    """
+    Removes <think> tags and markdown blocks to safely parse the JSON output.
+    """
+    cleaned = re.sub(r'<think>.*?</think>', '', raw_text, flags=re.DOTALL).strip()
+    if cleaned.startswith("```json"):
+        cleaned = cleaned[7:]
+    elif cleaned.startswith("```"):
+        cleaned = cleaned[3:]
+    if cleaned.endswith("```"):
+        cleaned = cleaned[:-3]
+    return json.loads(cleaned.strip())

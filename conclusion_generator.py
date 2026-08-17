@@ -63,7 +63,7 @@ class ConclusionGenerator:
         system_prompt = load_prompt_from_file("text_rewrite_prompt.txt")
         return ChatPromptTemplate.from_messages([
             ("system", system_prompt),
-            ("human", "Reference documents:\n{document_text}\n\nUser request:\n{user_instruction}\n\nOld text:\n{old_text}\n\nNew text:")
+            ("human", "Reference documents:\n{document_text}\n\nUser request:\n{user_instruction}\n\nOld text:\n{old_text}\n\nRole:\n{role}\n\nNew text:")
         ])
 
     def _nearest_point(self, point, points):
@@ -185,7 +185,8 @@ class ConclusionGenerator:
                         response = rewrite_chain.invoke({
                             "document_text": document_text,
                             "user_instruction": query,
-                            "old_text": item.get("text", "")
+                            "old_text": item.get("text", ""),
+                            "role": role
                         })
                         new_text = re.sub(r'<think>.*?</think>', '', response.content, flags=re.DOTALL).strip()
                         item['text'] = new_text.replace('*', '')
