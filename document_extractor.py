@@ -104,6 +104,8 @@ class DocumentDataExtractor:
             pairs.append((item, table_temp[nearest_point_idx]))
 
         for pair in pairs:
+            print("PAIR", pair)
+            print("------------------------------")
             data = pair[1].get('data')
             if not hasattr(data, 'columns'):
                 if isinstance(data, list):
@@ -149,6 +151,10 @@ class DocumentDataExtractor:
             }
             slide_params.append(dic)
 
+        print("*********************")
+        print(slide_params)
+        print("*********************")
+
         return slide_params
 
 
@@ -183,7 +189,7 @@ class DocumentDataExtractor:
         """
         Uses the LLM to select target elements across ALL slides at once.
         """
-        return [0,1,2,3,4,5]
+        return [2,3]
         available_summary = [
             {
                 "element_index": p.get("global_index"), 
@@ -193,16 +199,11 @@ class DocumentDataExtractor:
             }
             for p in global_slide_params
         ]
-        # formatted_elements = "\n".join([
-        #     f"- element_index: {p.get('global_index')} | slide_index: {p.get('slide_index')} | Type: {p.get('element_type')} | Text: {p.get('text')}"
-        #     for p in global_slide_params
-        # ])
 
         chain = self.target_selector_prompt_template | self.model
         try:
             response = chain.invoke({
                 "available_elements": json.dumps(available_summary, ensure_ascii=False),
-                # "available_elements": formatted_elements,
                 "user_instruction": user_instruction,
                 "reference_materials": document_text
             })

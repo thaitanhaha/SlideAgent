@@ -3,7 +3,7 @@ import glob
 import os
 import yaml
 import re
-import json
+import json5
 from pathlib import Path
 from typing import List, Dict, Any, NamedTuple
 
@@ -124,4 +124,4 @@ def _clean_and_parse_json(raw_text: str) -> Any:
         cleaned = cleaned[3:]
     if cleaned.endswith("```"):
         cleaned = cleaned[:-3]
-    return json.loads(cleaned.strip())
+    return json5.loads(cleaned.strip())

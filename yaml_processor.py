@@ -45,16 +45,16 @@ class YamlProcessor:
         Parses the structural layout of a specific slide index.
         """
         try:
-            # if hasattr(self.task, 'ground_truth_yaml_path') and self.task.ground_truth_yaml_path:
-            #     return self.load_yaml_data(self.task.ground_truth_yaml_path, slide_idx)
-            # return self.pptx_parser.parse_slide_vlm(slide_idx=slide_idx)
-            #TODO hard code
-            if slide_idx == 0:
-                return self.load_yaml_data("slides/test_1.yaml", 0)
-            if slide_idx == 1:
-                return self.load_yaml_data("slides/test_2.yaml", 1)
-            if slide_idx == 2:
-                return self.load_yaml_data("slides/test_3.yaml", 2)
+            if hasattr(self.task, 'ground_truth_yaml_path') and self.task.ground_truth_yaml_path:
+                return self.load_yaml_data(self.task.ground_truth_yaml_path, slide_idx)
+            return self.pptx_parser.parse_slide_vlm(slide_idx=slide_idx)
+            # #TODO hard code
+            # if slide_idx == 0:
+            #     return self.load_yaml_data("slides/test_1.yaml", 0)
+            # if slide_idx == 1:
+            #     return self.load_yaml_data("slides/test_2.yaml", 1)
+            # if slide_idx == 2:
+            #     return self.load_yaml_data("slides/test_3.yaml", 2)
         except Exception as e:
             print(f"[Error] Parsing PPT structure failed for slide {slide_idx}: {e}")
             return {}
@@ -79,9 +79,13 @@ class YamlProcessor:
             table_specs = []
             for idx, element in enumerate(template_slides.get('elements', [])):
                 if idx in target_indices and element.get('type') in {'chart', 'table'}:
+                    print("A---", element)
+                    data = element.get('data', [])
+                    columns = list(data[0].keys()) if data and isinstance(data, list) and isinstance(data[0], dict) else ['col1', 'col2']
                     spec = {
                         'caption': element.get('caption', f'Target_Element_{idx}'),
-                        'columns': element.get('data', {}).get('columns', ['col1', 'col2'])
+                        # 'columns': element.get('data', {}).get('columns', ['col1', 'col2'])
+                        'columns': columns
                     }
                     table_specs.append(spec)
 
@@ -89,6 +93,7 @@ class YamlProcessor:
                 print("[Warning] No tables/charts were selected for updating.")
                 return slide_data_path
 
+            print("TABLE SPECS", table_specs)
             # Call DocumentProcessor to save data to the data_path
             self.document_processor.extract_multiple_tables_from_document(
                 document_text=document_text,

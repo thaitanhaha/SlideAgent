@@ -1,0 +1,136 @@
+instruction: Change the content of the slide from Machine Learning to Deep Learning
+target_elements:
+- - 3
+template_slides:
+- slide_size:
+    width: 33.87
+    height: 19.05
+  elements:
+  - id: 0
+    type: textBox
+    text: Definition and Types
+    role: slide-title
+    layout:
+      x: 1.79
+      y: 1.26
+      width: 26.12
+      height: 3.89
+    _original_idx: 0
+  - id: 1
+    type: textBox
+    text: "Machine learning is a part of artificial intelligence. \nIt lets computers learn from data and get better over time without writing exact rules for every task. \nInstead of hard-coding instructions, programmers feed data into a system so it can find patterns and make its own choices or guesses."
+    role: body-text
+    layout:
+      x: 3.06
+      y: 3.92
+      width: 24.85
+      height: 5.38
+    _original_idx: 1
+  - id: 3
+    type: textBox
+    text: Main types of machine learning
+    role: caption
+    layout:
+      x: 11.75
+      y: 16.95
+      width: 10.36
+      height: 1.03
+    _original_idx: 2
+  - id: 2
+    type: table
+    role: table
+    layout:
+      x: 1.79
+      y: 10.38
+      width: 29.09
+      height: 6.36
+    data:
+    - Types: Supervised learning
+      Properties: Uses data that already has the correct answers (labels) to teach the system how to predict outcomes for new data.
+      Year: 1950s
+    - Types: Unsupervised learning
+      Properties: Looks at data without any labels to find hidden groups or patterns on its own.
+      Year: 1960s
+    - Types: Reinforcement learning
+      Properties: Learns by trial and error, getting rewards for good moves and penalties for bad ones
+      Year: 1980s
+    args:
+    - field-constraint
+    - - - Types
+        - Properties
+        - Year
+      - - year
+        - year
+        - '1950'
+        - '1990'
+        - 10
+    - - dim_ml_type
+      - dim_property
+    - - count
+      - count
+    _original_idx: 3
+output_slides:
+- slide_size:
+    width: 33.87
+    height: 19.05
+  elements:
+  - id: 0
+    type: textBox
+    text: Definition and Types
+    role: slide-title
+    layout:
+      x: 1.79
+      y: 1.26
+      width: 26.12
+      height: 3.89
+  - id: 1
+    type: textBox
+    text: "Machine learning is a part of artificial intelligence. \nIt lets computers learn from data and get better over time without writing exact rules for every task. \nInstead of hard-coding instructions, programmers feed data into a system so it can find patterns and make its own choices or guesses."
+    role: body-text
+    layout:
+      x: 3.06
+      y: 3.92
+      width: 24.85
+      height: 5.38
+  - id: 3
+    type: textBox
+    text: Main types of machine learning
+    role: caption
+    layout:
+      x: 11.75
+      y: 16.95
+      width: 10.36
+      height: 1.03
+  - id: 2
+    type: table
+    role: table
+    layout:
+      x: 1.79
+      y: 10.38
+      width: 29.09
+      height: 6.36
+    data:
+    - Types: Supervised learning
+      Properties: Uses data that already has the correct answers (labels) to teach the system how to predict outcomes for new data.
+      Year: 1950s
+    - Types: Unsupervised learning
+      Properties: Looks at data without any labels to find hidden groups or patterns on its own.
+      Year: 1960s
+    - Types: Reinforcement learning
+      Properties: Learns by trial and error, getting rewards for good moves and penalties for bad ones
+      Year: 1980s
+    args:
+    - field-constraint
+    - - - Types
+        - Properties
+        - Year
+      - - year
+        - year
+        - '1950'
+        - '1990'
+        - 10
+    - - dim_ml_type
+      - dim_property
+    - - count
+      - count
+data_path: C:\Users\hp450\Desktop\SlideAgent\data\20260820_064016

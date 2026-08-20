@@ -17,6 +17,7 @@ from math import sqrt, hypot
 from typing import Dict, List, Any, Tuple
 from pptxtopdf import convert
 from pdf2image import convert_from_path
+from difflib import SequenceMatcher
 
 from file_utils import load_prompt_from_file
 from pptx_analyser import _call_vision_model_v2
@@ -301,6 +302,9 @@ class PptxParser:
                 best_idx = i
         return best_idx
 
+    def _text_similar(self, a, b):
+        return SequenceMatcher(None, a.lower(), b.lower()).ratio()
+
     def pptx_box_layout_to_box_layout(self, layout, pptx_cm_to_px_w_ratio, pptx_cm_to_px_h_ratio):
         x1 = layout.get('x') * pptx_cm_to_px_w_ratio
         y1 = layout.get('y') * pptx_cm_to_px_h_ratio
@@ -369,26 +373,60 @@ class PptxParser:
         }
         return template_slide
 
-    def _match_elements(self, pptx_elements: Dict[str, Any], vlm_results: List[Dict[str, Any]], img_w: int,
-                        img_h: int) -> Dict[str, Any]:
-        pptx_cm_to_px_w_ratio = img_w / emu_to_cm(self.presentation.slide_width)
-        pptx_cm_to_px_h_ratio = img_h / emu_to_cm(self.presentation.slide_height)
+    # def _match_elements(self, pptx_elements: Dict[str, Any], vlm_results: List[Dict[str, Any]], img_w: int,
+    #                     img_h: int) -> Dict[str, Any]:
+    #     pptx_cm_to_px_w_ratio = img_w / emu_to_cm(self.presentation.slide_width)
+    #     pptx_cm_to_px_h_ratio = img_h / emu_to_cm(self.presentation.slide_height)
+    #     elements = pptx_elements.get('elements', [])
+    #     points = []
+    #     for element in elements:
+    #         points.append((element.get('layout').get('x'), element.get('layout').get('y')))
+
+    #     for item in vlm_results:
+    #         item_point = (round(item["bbox"][0] / pptx_cm_to_px_w_ratio, 2), round(item["bbox"][1] / pptx_cm_to_px_h_ratio, 2))
+    #         nearest_point_idx = self._nearest_point(item_point, points)
+    #         elements[nearest_point_idx]['role'] = item['shape_type']
+
+    #     template_slide = {
+    #         "slide_size": pptx_elements.get('slide_size'),
+    #         "elements": elements
+    #     }
+
+    #     return template_slide
+
+    def _match_elements(self, pptx_elements: Dict[str, Any], vlm_results: List[Dict[str, Any]]):
         elements = pptx_elements.get('elements', [])
-        points = []
-        for element in elements:
-            points.append((element.get('layout').get('x'), element.get('layout').get('y')))
 
         for item in vlm_results:
-            item_point = (
-            round(item["bbox"][0] / pptx_cm_to_px_w_ratio, 2), round(item["bbox"][1] / pptx_cm_to_px_h_ratio, 2))
-            nearest_point_idx = self._nearest_point(item_point, points)
-            elements[nearest_point_idx]['role'] = item['shape_type']
+            vlm_content = item.get('content', '').strip()
+            shape_type = item.get('shape_type')
+            
+            best_match_idx = -1
+            highest_score = 0.0
+            
+            for idx, element in enumerate(elements):
+                if element.get('role') != '': continue
+                    
+                pptx_text = element.get('text', '').strip()
+                if not pptx_text:
+                    data = element.get('data', [])
+                    pptx_text = ' '.join([str(val) for item in data for val in item.values()])
+                if not pptx_text: continue
+
+                score = self._text_similar(vlm_content, pptx_text)
+                
+                if score > highest_score:
+                    highest_score = score
+                    best_match_idx = idx
+
+            elements[best_match_idx]['role'] = shape_type
 
         template_slide = {
             "slide_size": pptx_elements.get('slide_size'),
             "elements": elements
         }
-
+        # print("ELEMENTS", elements)
+        # print('-------------')
         return template_slide
 
     def _match_caption_and_table(self, structured_data) -> Dict[str, Any]:
@@ -416,7 +454,7 @@ class PptxParser:
                 except Exception as e:
                     print(e)
                 table_args = ast.literal_eval(table_args)
-                print(table_args)
+                # print(table_args)
                 elements_table[best_idx]["args"] = table_args
                 updated_elements.append(item)
                 updated_elements.append(elements_table[best_idx])
@@ -510,9 +548,10 @@ class PptxParser:
         if not vlm_results:
             return {"error": "Unable to generate slide image or call VLM"}
 
-        structured_data = self._match_elements(pptx_elements, vlm_results, img_w, img_h)
+        # structured_data = self._match_elements(pptx_elements, vlm_results, img_w, img_h)
+        structured_data = self._match_elements(pptx_elements, vlm_results)
         # structured_data = self._match_elements_with_iou(pptx_elements, vlm_results, img_w, img_h)
-
+        
         data = structured_data
         template_slide = self._match_caption_and_table(data)
         return template_slide
