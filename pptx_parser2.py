@@ -446,16 +446,7 @@ class PptxParser:
                     table_points.append(
                         (elements_table_layout.get('layout').get('x'), elements_table_layout.get('layout').get('y')))
                 best_idx = self._nearest_point(caption_point, table_points)
-                table_data = elements_table[best_idx].get('data')
-
-                chain = self.table_information_extraction_prompt_template | self.model
-                try:
-                    table_args = chain.invoke({"table_caption": caption, "table_data": table_data}).content
-                except Exception as e:
-                    print(e)
-                table_args = ast.literal_eval(table_args)
-                # print(table_args)
-                elements_table[best_idx]["args"] = table_args
+                
                 updated_elements.append(item)
                 updated_elements.append(elements_table[best_idx])
 
@@ -550,10 +541,12 @@ class PptxParser:
 
         # structured_data = self._match_elements(pptx_elements, vlm_results, img_w, img_h)
         structured_data = self._match_elements(pptx_elements, vlm_results)
+        print(1)
         # structured_data = self._match_elements_with_iou(pptx_elements, vlm_results, img_w, img_h)
         
         data = structured_data
         template_slide = self._match_caption_and_table(data)
+        print(2)
         return template_slide
 
     @staticmethod

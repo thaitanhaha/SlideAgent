@@ -1,5 +1,5 @@
 Deep Learning is a branch of machine learning that uses artificial neural networks with multiple layers to learn complex patterns from large amounts of data. Instead of relying on humans to define important features, deep learning models can automatically learn these features from the data. It is especially effective for tasks involving images, audio, text, and other complex data.
-Major Deep Learning Architectures
+Major Deep Learning Types
 - Convolutional Neural Networks (CNNs) - 1979: Process grid data like images and video by detecting spatial patterns, edges, and textures.
 - Recurrent Neural Networks (RNNs) - 1982: Handle sequential data like time series or speech by maintaining a hidden memory state over time.
 - Long Short-Term Memory (LSTM) - 1997: An advanced type of RNN designed to remember long-term dependencies and avoid memory loss.

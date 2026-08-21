@@ -42,7 +42,8 @@ class PptxRenderer:
                     
         for i, table_element in enumerate(yaml_tables):
             if i < len(table_shapes):
-                self._update_table(table_shapes[i].table, table_element.get('data', []))
+                # self._update_table(table_shapes[i].table, table_element.get('data', []))
+                self._update_table(slide, table_shapes[i], table_element.get('data', []))
                 
         for i, chart_element in enumerate(yaml_charts):
             if i < len(chart_shapes):
@@ -50,31 +51,65 @@ class PptxRenderer:
 
     def _replace_text_preserve_format(self, shape, new_text):
         text_frame = shape.text_frame
-        if not text_frame.paragraphs:
-            text_frame.text = new_text
-            return
-            
-        for p in text_frame.paragraphs:
-            for r in p.runs:
-                r.text = ""
+        lines = str(new_text).split('\n')
         
-        text_frame.paragraphs[0].text = str(new_text)
+        for i, line in enumerate(lines):
+            if i < len(text_frame.paragraphs):
+                p = text_frame.paragraphs[i]
+                if p.runs:
+                    p.runs[0].text = line
+                    for r in p.runs[1:]:
+                        r.text = ""
+                else:
+                    p.text = line
+            else:
+                p = text_frame.add_paragraph()
+                p.text = line
+                
+        if len(text_frame.paragraphs) > len(lines):
+            for i in range(len(text_frame.paragraphs) - 1, len(lines) - 1, -1):
+                p = text_frame.paragraphs[i]
+                p_element = p._element
+                p_element.getparent().remove(p_element)
 
-    def _update_table(self, table_shape, data_list):
-        if not data_list: 
-            return
-            
+    def _update_table(self, slide, table_shape, data_list):            
         df = pd.DataFrame(data_list)
         columns = df.columns.tolist()
         
-        for row_idx in range(min(len(df) + 1, len(table_shape.rows))):
-            for col_idx in range(min(len(columns), len(table_shape.columns))):
-                cell = table_shape.cell(row_idx, col_idx)
-                
-                if row_idx == 0:
-                    cell.text = str(columns[col_idx])
-                else:
-                    cell.text = str(df.iloc[row_idx - 1, col_idx])
+        target_rows = len(df) + 1
+        target_cols = len(columns)
+        
+        current_rows = len(table_shape.table.rows)
+        current_cols = len(table_shape.table.columns)
+        
+        if target_rows == current_rows and target_cols == current_cols:
+            table = table_shape.table
+            for row_idx in range(target_rows):
+                for col_idx in range(target_cols):
+                    cell = table.cell(row_idx, col_idx)
+                    if row_idx == 0:
+                        cell.text = str(columns[col_idx])
+                    else:
+                        cell.text = str(df.iloc[row_idx - 1, col_idx])
+        else:
+            left = table_shape.left
+            top = table_shape.top
+            width = table_shape.width
+            height = table_shape.height
+            
+            sp = table_shape._element
+            sp.getparent().remove(sp)
+            
+            new_table_shape = slide.shapes.add_table(target_rows, target_cols, left, top, width, height)
+            table = new_table_shape.table
+            
+            for row_idx in range(target_rows):
+                for col_idx in range(target_cols):
+                    cell = table.cell(row_idx, col_idx)
+                    if row_idx == 0:
+                        cell.text = str(columns[col_idx])
+                    else:
+                        cell.text = str(df.iloc[row_idx - 1, col_idx])
 
     def _update_chart(self, chart, data_list):
         if not data_list: 
@@ -95,9 +130,9 @@ class PptxRenderer:
 
 
 if __name__ == "__main__":
-    TEMPLATE_PPTX = "slides/slide1.pptx" 
-    YAML_GENERATED = "slides/slide1_generated_doc.yaml"
-    OUTPUT_PPTX = "slides/slide1_fix.pptx"
+    TEMPLATE_PPTX = "slides/slide5.pptx" 
+    YAML_GENERATED = "slides/slide5_generated_doc.yaml"
+    OUTPUT_PPTX = "slides/slide5_fix.pptx"
     
     renderer = PptxRenderer(
         template_path=TEMPLATE_PPTX,

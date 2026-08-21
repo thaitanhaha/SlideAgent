@@ -189,7 +189,7 @@ class DocumentDataExtractor:
         """
         Uses the LLM to select target elements across ALL slides at once.
         """
-        return [2,3]
+        # return [1,2,3]
         available_summary = [
             {
                 "element_index": p.get("global_index"), 

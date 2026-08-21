@@ -105,8 +105,9 @@ class DocumentProcessor:
 
         for idx, spec in enumerate(table_specs):
             caption = spec.get('caption', f'Table {idx}')
+            ori_idx = spec.get('idx', idx)
             print(f"[Info] Extracting data for table: {caption}...")
-            csv_file_path = retrieval_path / f"{idx}.csv"
+            csv_file_path = retrieval_path / f"{ori_idx}.csv"
 
             try:
                 # Call the LLM to extract the data

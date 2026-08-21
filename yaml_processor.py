@@ -50,7 +50,7 @@ class YamlProcessor:
             return self.pptx_parser.parse_slide_vlm(slide_idx=slide_idx)
             # #TODO hard code
             # if slide_idx == 0:
-            #     return self.load_yaml_data("slides/test_1.yaml", 0)
+            #     return self.load_yaml_data("slides/test_2.yaml", 0)
             # if slide_idx == 1:
             #     return self.load_yaml_data("slides/test_2.yaml", 1)
             # if slide_idx == 2:
@@ -85,7 +85,8 @@ class YamlProcessor:
                     spec = {
                         'caption': element.get('caption', f'Target_Element_{idx}'),
                         # 'columns': element.get('data', {}).get('columns', ['col1', 'col2'])
-                        'columns': columns
+                        'columns': columns,
+                        'idx': idx
                     }
                     table_specs.append(spec)
 

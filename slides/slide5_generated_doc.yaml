@@ -1,0 +1,93 @@
+instruction: Change the content of the slide from Machine Learning to Deep Learning
+target_elements:
+- - 1
+  - 2
+template_slides:
+- slide_size:
+    width: 33.87
+    height: 19.05
+  elements:
+  - id: 0
+    type: textBox
+    text: Definition and Types
+    role: slide-title
+    layout:
+      x: 1.79
+      y: 1.26
+      width: 26.12
+      height: 3.89
+    _original_idx: 0
+  - id: 1
+    type: textBox
+    text: "Machine learning is a part of artificial intelligence. \nIt lets computers learn from data and get better over time without writing exact rules for every task. \nInstead of hard-coding instructions, programmers feed data into a system so it can find patterns and make its own choices or guesses."
+    role: body-text
+    layout:
+      x: 3.06
+      y: 4.44
+      width: 24.85
+      height: 5.38
+    _original_idx: 1
+  - id: 2
+    type: textBox
+    text: 'Supervised learning: Uses data that already has the correct answers (labels) to teach the system how to predict outcomes for new data.
+
+      Unsupervised learning: Looks at data without any labels to find hidden groups or patterns on its own.
+
+      Reinforcement learning: Learns by trial and error, getting rewards for good moves and penalties for bad ones'
+    role: body-text
+    layout:
+      x: 3.06
+      y: 11.48
+      width: 24.85
+      height: 5.38
+    _original_idx: 2
+output_slides:
+- slide_size:
+    width: 33.87
+    height: 19.05
+  elements:
+  - id: 0
+    type: textBox
+    text: Definition and Types
+    role: slide-title
+    layout:
+      x: 1.79
+      y: 1.26
+      width: 26.12
+      height: 3.89
+  - id: 1
+    type: textBox
+    text: Deep learning is a subset of artificial intelligence that uses multilayer neural networks to model complex patterns. Unlike traditional AI, it learns features automatically from raw data rather than requiring manual engineering. This approach excels at tasks such as image recognition, speech processing, and natural language understanding.
+    role: body-text
+    layout:
+      x: 3.06
+      y: 4.44
+      width: 24.85
+      height: 5.38
+  - id: 2
+    type: textBox
+    text: 'Deep Learning is a branch of machine learning that uses artificial neural networks with multiple layers to learn complex patterns from large amounts of data. Instead of relying on humans to define important features, deep learning models can automatically learn these features from the data. It is especially effective for tasks involving images, audio, text, and other complex data.
+
+      Major Deep Learning Types
+
+      - Convolutional Neural Networks (CNNs) - 1979: Process grid data like images and video by detecting spatial patterns, edges, and textures.
+
+      - Recurrent Neural Networks (RNNs) - 1982: Handle sequential data like time series or speech by maintaining a hidden memory state over time.
+
+      - Long Short-Term Memory (LSTM) - 1997: An advanced type of RNN designed to remember long-term dependencies and avoid memory loss.
+
+      - Transformer Networks - 2017: Use self-attention mechanisms to process words and long text sequences in parallel, powering modern large language models.
+
+
+      Supervised learning: Uses data that already has the correct answers (labels) to teach the system how to predict outcomes for new data.
+
+      Unsupervised learning: Looks at data without any labels to find hidden groups or patterns on its own.
+
+      Reinforcement learning: Learns by trial and error, getting rewards for good moves and penalties for bad ones'
+    role: body-text
+    layout:
+      x: 3.06
+      y: 11.48
+      width: 24.85
+      height: 5.38
+data_path: C:\Users\hp450\Desktop\SlideAgent\data\20260821_070410

@@ -53,8 +53,9 @@ class ConclusionGenerator:
         return ChatPromptTemplate.from_messages([
             ("system", system_prompt),
             ("human", """
-                        table_template_caption: {template_caption}
-                        params:{params}
+                        user_instruction: {user_instruction}
+                        old_caption: {old_caption}
+                        table_information: {table_information}
                         table_caption:            
             """)
         ])
@@ -206,13 +207,14 @@ class ConclusionGenerator:
                     # 2. Read new data from the retrieval folder (CSV file corresponding to the index)
                     csv_file = retrieval_path / f"{table_original_idx}.csv"
                     if csv_file.exists():
-
                         # 3. Generate new caption
                         try:
+                            new_data_df = pd.read_csv(csv_file)
                             caption_chain = self.new_caption_prompt_template | self.model
                             caption_content = caption_chain.invoke({
-                                "template_caption": item.get("text"), 
-                                "user_instruction": query
+                                "old_caption": item.get("text"), 
+                                "user_instruction": query,
+                                "table_information": new_data_df.to_string(index=False)
                             }).content
                             caption_content = re.sub(r'<think>.*?</think>', '', caption_content, flags=re.DOTALL).strip()
                             item['text'] = caption_content
@@ -220,25 +222,28 @@ class ConclusionGenerator:
                             print(f"[Error] Failed to generate new caption: {e}")
                             caption_content = item.get("text")
 
-                        # 4. Generate new conclusion
-                        try:
-                            new_data_df = pd.read_csv(csv_file)
-                            if not updated_conclusion and template_conclusion:
-                                conclusion_chain = self.conclusion_prompt_template | self.model
-                                response = conclusion_chain.invoke({
-                                    "template_caption": item.get("text"), 
-                                    "template_data": target_table.get("data"),
-                                    "template_conclusion": template_conclusion,
-                                    "data_caption": caption_content,
-                                    "data": new_data_df.to_string(index=False)
-                                })
-                                updated_conclusion = response.content.replace('*', '')
-                                updated_conclusion = re.sub(r'<think>.*?</think>', '', updated_conclusion, flags=re.DOTALL).strip()
+                        # 4. Update data into the table
+                        target_table['data'] = new_data_df.to_dict('records')
 
-                            # 5. Update data into the table
-                            target_table['data'] = new_data_df.to_dict('records')
-                        except Exception as e:
-                            print(f"[Error] Failed to process table data or conclusion: {e}")
+                        # # 4. Generate new conclusion
+                        # try:
+                        #     new_data_df = pd.read_csv(csv_file)
+                        #     if not updated_conclusion and template_conclusion:
+                        #         conclusion_chain = self.conclusion_prompt_template | self.model
+                        #         response = conclusion_chain.invoke({
+                        #             "template_caption": item.get("text"), 
+                        #             "template_data": target_table.get("data"),
+                        #             "template_conclusion": template_conclusion,
+                        #             "data_caption": caption_content,
+                        #             "data": new_data_df.to_string(index=False)
+                        #         })
+                        #         updated_conclusion = response.content.replace('*', '')
+                        #         updated_conclusion = re.sub(r'<think>.*?</think>', '', updated_conclusion, flags=re.DOTALL).strip()
+
+                        #     # 5. Update data into the table
+                        #     target_table['data'] = new_data_df.to_dict('records')
+                        # except Exception as e:
+                        #     print(f"[Error] Failed to process table data or conclusion: {e}")
 
             # Remove temporary indices and update the conclusion into body-text
             for item in elements:
